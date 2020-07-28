@@ -1,0 +1,149 @@
+1. backend.ml
+
+A. We have the following types:
+
+i. f - this is the type of a 'cell' in a spreadsheet. It is either empty or contains a floating point constant.
+
+ii. sheet - it is a list of lists of f
+
+iii. row - it is a list of f
+
+iv. range - it is a pair of pairs of integers
+
+v. index - it is a pair of integers
+
+
+B. We have the following functions:
+
+i. dim s - this returns the dimensions of a sheet s as a pair of integers.
+
+ii. resize_list l siz element - this returns a list l' which consists of the first siz elements of l, and if siz > length of l, we keep appending the given element to l
+
+iii. resize_sheet s x y - this is the sheet analogue of the previous function, and the element that is added to the sheets when we run out of elements of s is the Empty element of type f.
+
+iv. resize_up s x y - this returns the smallest sheet that can fit both s and a sheet of dimensions (x, y) in it, and it has elements of s at the corresponding locations.
+
+v. resize_to_coordinate s (x, y) - this works analogously to the previous function and ensures that the coordinate (x, y) exists inside the resulting sheet.
+
+vi. check_valid_range r - this checks if the range is indeed well-formed, i.e., if the first cell in the range is to the upper-left of the last cell in the range; if it is valid, it returns true, else it raises the exception Invalid_range.
+
+vii. check_range_inside s r - this checks if the range r is valid, and if it is contained completely inside the sheet s, and if it is valid but not inside the sheet, it raises Outside_sheet, and if it is invalid, it raises Invalid_range.
+
+viii. extent_range r - this returns the difference in the row numbers and the column numbers of the top left and bottom right cells in the range
+
+ix. check_compatible r1 r2 - this checks if the ranges have the same extents (i.e. if these ranges were copied to a sheet, would their dimensions be equal or not), and raises Incompatible_ranges if the ranges are not compatible.
+
+x. check_index i r - this returns true if the index i is in the range r, and false if it isn't.
+
+xi. get_list_range l left right - this returns the list of elements of l (in order) whose indices are between left and right (both inclusive).
+
+xii. get_sheet_range s r - using the previous function, this returns a sheet that has elements of s whose indices lie inside the range r.
+
+xiii. transpose s - this returns the transpose of the sheet s
+
+xiv. reduce_sheet_to_one_row func element s - this function reduces each row of a sheet s and returns a list of the resulting values.
+
+xv. reduce_sheet_rows_to_col func element s - this function returns the sheet representation of the column that would be the result of a row-wise reduction on the sheet s.
+
+xvi. reduce_sheet_cols_to_row func element s - this function returns the sheet representation of the row that would be the result of a column-wise reduction on the sheet s.
+
+xvii. reduce_sheet_to_singleton func1 func2 element s - this function returns the sheet representation of the cell that would be the result of the following operation: reduce each row using the first function and the starting element being element, and the reduce the resulting row using the second function and the same starting element as before.
+
+xviii. set_range l m left right - this function assumes that (right - left + 1) equals the length of m, and if it is false, it raises Incompatible_ranges. It considers the elements of l whose indices are in [left, right] and returns a list in which they are replaced by the elements of m.
+
+xix. set_range_sheet s t r - this function returns a sheet whose elements which have indices in the range r come from t and the rest come from s.
+
+xx. set_range_expand s t r - this function expands s to accomodate the range r, and then uses set_range on the expanded s.
+
+xxi. fill_row x element - this returns a list of length x whose elements are element.
+
+xxii. fill_row_random x - this returns a randomly generated list of length x
+
+xxiii. fill_sheet (x, y) num - this returns a sheet of dimension (x, y) filled with Float(num).
+
+xxiv. fill_sheet_random (x, y) - this returns a randomly generated sheet of dimension (x, y)
+
+xxv. count_cell x y - this is a helper function used in counting cells in a range.
+
+xxvi. add_cell x y - this is a helper function used in the sum of cells in a range (it returns the sum of two elements of type f and raises Empty_cell if any of them is empty - this is done by the functions below as well)
+
+xxvii.  min_float x y - this is a helper function used in finding the minimum cell in a range.
+
+xxviii. max_float x y - this is a helper function used in finding the maximum cell in a range
+
+xxix. map2_sheet func s1 s2 - this is an analogue of the List.map2 function for sheets, and raises Incompatible_ranges if the sheets don't have identical dimensions.
+
+xxx. add_sheets s1 s2 - this is a function that adds two sheets to give another sheet of the same dimensions.
+
+xxxi. sub_sheets s1 s2 - this is a function that subtracts s2 from s1 to give another sheet of the same dimensions.
+
+xxxii. mult_sheets s1 s2 - this is a function that multiplies two sheets element wise to give another sheet of the same dimensions.
+
+xxxiii. div_sheets s1 s2 - this is a function that divides s1 by s2 element wise to give another sheet of the same dimensions.
+
+xxxiv. x_sheet_num s num (where x is add or sub or mult or div) - this function is the analogue of the function x_sheets with the second argument being a sheet filled with Float(num).
+
+xxxv. infer_range (x, y) input_range op_type - this function infers the range of the output of an instruction, given the operand type (results in a singleton, a row, a column or a binary operation), the input range and the top-left cell of the output.
+
+xxxvi. unary_on_sheet s r i op_type func1 func2 element - this function runs every unary operation except the average operation. We extract the range and make it into a sheet, and then use an appropriate reduce_sheet_x function, and then set the output range (which is inferred from the input range and the target cell) to this result.
+
+xxxvii. binary_on_sheet s r1 r2 i constant op_type - this function does the analogue of the previous function for a binary operation. 
+
+xxxviii. unary_avg s r i op_type - this function computes the result of the unary functions which involve averaging. Here we simply find the range outputs for the count and the sum operations, and divide the two sheets and set the range of the output to this.
+
+xxxix. all the functions specified in the specifications - these functions are implemented using one of the following three functions - unary_on_sheet, binary_on_sheet, unary_avg, which are elaborated upon in their own points.
+
+
+2. lexer.mll
+
+This is the ocamllex file for the lexical analysis.
+
+
+3. types.ml
+
+This contains the type definitions of a command, and various helper functions to help in printing commands and lists of commands.
+A command can either be a command with a unary operator or a binary operator (and in this case, it can fall into one of the 5 kinds of commands as specified in the specifications). The type command encodes all this information.
+
+The function printi x prints the index x = (w, z) in the form "Index(w, z)"
+
+The function printr x prints the range x in an analogous form
+
+The function print_command c prints the command data (i.e. it prints the command in a way similar to the format we are given a command)
+
+The function print_command_list prints a list of commands which each command on a separate line, starting from the first command.
+
+
+4. parser1.mly
+
+We have three kinds of non-terminals - parse, instructions and instruction.
+A non-terminal is an instruction iff it is in one of the five types of commands as specified in the specifications, and the production rules returns a value of type command (as specified in types.ml). It is of type instructions if it can be represented as a 'list' of any number of assignment non-terminals. It is of type parse if it is a non-terminal of type instructions followed by an EOF token.
+
+A non-terminal of the type instructions returns a list of the commands (which correspond to each individual instruction) in reversed order.
+
+A non-terminal of type parse returns the same list that the instructions in the production rule returns.
+
+
+5. main.ml
+
+We have the following functions-
+
+The function get_ s i returns the element at index i in a list s, and raises an exception if i is out of bounds.
+
+The function get s (i, j) returns the element at index (i, j) in a list of lists s, and raises an exception if this index is out of bounds.
+
+The function print_list a prints the float list a in a line (sace separated floating point numbers)
+
+The function print_sheet s prints a sheet as a grid of numbers.
+
+The function run_unary s operator start range runs a unary command
+
+The functions run_binary_x_y run a binary command taking elements which are of 'types' x and y as arguments. (Here x and y are in {range, index, constant})
+The implementations of the case where both x, y are equal to range rely on the functions add_range etc.
+When either of them is an index, we reduce that to the case of the argument being constant (using the get function)
+In the only remaining case when one of them is range and the other is a constant, we rely on the implementation of the functions add_const etc.
+
+The function eval s instruction takes a command instruction and runs it on the sheet s and returns the sheet.
+
+The function eval_list a s takes a list of commands a, and runs it on the sheet s, and returns the sheet. This is done using a tail recursive loop. During the execution, we print the state of the whole sheet at once as well, and if there is an exception raised, we simply ignore the instruction and print the name of the exception encountered, and keep on running the instruction list on the sheet.
+
+The driver code is a simple let expression which starts parsing and calls the instruction list so obtained to be ls, and then runs it on the sheet s, and prints the final status of the sheet.
